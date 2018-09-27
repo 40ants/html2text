@@ -76,3 +76,10 @@ bar")))))
 (deftest test-html-with-link
   (ok (equal (html2text "This is <a href=\"http://ultralisp.org/\">ultralisp</a> project.")
              "This is [ultralisp](http://ultralisp.org/) project.")))
+
+
+(deftest test-style-and-script-should-be-remove
+  (ok (equal (html2text "Doc with <style>.body {color: black;}</style>.")
+             "Doc with."))
+  (ok (equal (html2text "Doc with <script>alert(\"foo\");</script>.")
+             "Doc with.")))

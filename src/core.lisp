@@ -37,7 +37,7 @@
 
 (defmethod serialize ((tag t) (node plump:nesting-node))
   (let ((children (plump:children node))
-        (block-elements '(:p)))
+        (block-elements '(:p :style :script)))
     (loop with prev-node-was-block = t
           for idx below (length children)
           for node = (aref children idx)
@@ -135,6 +135,10 @@
     (call-next-method)
     (format *output-stream* "](~A)"
             url)))
+
+
+;; These tags are removed completely with content
+(def-tag-serializer (:style :script))
 
 ;; blockquote
 ;; > some
