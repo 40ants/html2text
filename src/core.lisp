@@ -13,7 +13,8 @@
 
 (defvar *output-stream* t)
 
-(defparameter *trim-whitespaces* t)
+(defparameter *trim-left* t)
+(defparameter *trim-right* t)
 
 
 (defgeneric get-node-tag (node)
@@ -38,15 +39,21 @@
   (let ((children (plump:children node))
         (block-elements '(:p)))
     (loop with prev-node-was-block = t
-          for node across children
+          for idx below (length children)
+          for node = (aref children idx)
           for node-tag = (get-node-tag node)
+          for next-node = (when (< idx (length children))
+                            (aref children (+ idx 1)))
+          for next-node-is-block = (member (get-node-tag next-node)
+                                           block-elements)
           ;; Here we track a type of the previous node,
           ;; to know if we need to trim leading whitespace
           ;; For example, when this HTML "<span>foo</span> bar"
           ;; is transformed into the text, a whitespace before "bar"
           ;; should be keeped. But if we replace "span" with "p",
           ;; then space should be removed.
-          do (let ((*trim-whitespaces* prev-node-was-block))
+          do (let ((*trim-left* prev-node-was-block)
+                   (*trim-right* next-node-is-block))
                (serialize node-tag
                           node))
              (setf prev-node-was-block
@@ -56,14 +63,19 @@
 
 (defun normalize-whitespaces (string &key
                                        (char #\space)
-                                       (trim t))
+                                       (trim-left t)
+                                       (trim-right t))
   "Returns a string with multiple spaces replaced by one, optionally trimmed."
   (check-type string string)
   (check-type char character)
-  (let ((char-found nil)
-        (string (if trim
-                    (string-trim (string char) string)
-                    string)))
+  (let* ((char-found nil)
+         (chars-to-trim (list char))
+         (string (if trim-left
+                     (string-left-trim chars-to-trim string)
+                     string))
+         (string (if trim-right
+                     (string-right-trim chars-to-trim string)
+                     string)))
     (with-output-to-string (stream)
       (loop for c across string do
         (if (char= c char)
@@ -78,7 +90,8 @@
 (defmethod serialize ((tag t) (node plump:text-node))
   (let* ((text (plump:text node))
          (normalized-text (normalize-whitespaces text
-                                                 :trim *trim-whitespaces*))
+                                                 :trim-left *trim-left*
+                                                 :trim-right *trim-right*))
          (trimmed-text (string-trim '(#\Newline)
                                     normalized-text)))
     
@@ -96,14 +109,16 @@
 
 (def-tag-serializer (:b :strong)
   (write-string "**" *output-stream*)
-  (let ((*trim-whitespaces* nil))
+  (let ((*trim-left* nil)
+        (*trim-right* nil))
     (call-next-method))
   (write-string "**" *output-stream*))
 
 
 (def-tag-serializer (:em :i :u)
   (write-string "_" *output-stream*)
-  (let ((*trim-whitespaces* nil))
+  (let ((*trim-left* nil)
+        (*trim-right* nil))
     (call-next-method))
   (write-string "_" *output-stream*))
 
@@ -112,8 +127,14 @@
   (format *output-stream* "~2&")
   (call-next-method))
 
-;; p - line break
 
+(def-tag-serializer (:a)
+  (let ((url (or (plump:attribute node "href")
+                 "")))
+    (write-string "[" *output-stream*)
+    (call-next-method)
+    (format *output-stream* "](~A)"
+            url)))
 
 ;; blockquote
 ;; > some
@@ -132,15 +153,13 @@
 ;; text
 ;; ```
 
-;; a
-
 ;; img
 
 ;; ul/ol/li
 
 
 (defmethod serialize :around (tag node)
-  (log:debug "Serializing" tag node)
+  (log:info "Serializing" tag node)
   (call-next-method))
 
 

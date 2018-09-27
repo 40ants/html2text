@@ -70,5 +70,9 @@ bar")))
                  "
 Foo
 
-bar")))
-    ))
+bar")))))
+
+
+(deftest test-html-with-link
+  (ok (equal (html2text "This is <a href=\"http://ultralisp.org/\">ultralisp</a> project.")
+             "This is [ultralisp](http://ultralisp.org/) project.")))
