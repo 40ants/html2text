@@ -42,10 +42,13 @@
           for idx below (length children)
           for node = (aref children idx)
           for node-tag = (get-node-tag node)
-          for next-node = (when (< idx (length children))
+          for next-node = (when (< idx (- (length children)
+                                          1))
                             (aref children (+ idx 1)))
-          for next-node-is-block = (member (get-node-tag next-node)
-                                           block-elements)
+          for next-node-is-block = (if next-node
+                                       (member (get-node-tag next-node)
+                                               block-elements)
+                                       t)
           ;; Here we track a type of the previous node,
           ;; to know if we need to trim leading whitespace
           ;; For example, when this HTML "<span>foo</span> bar"
@@ -76,12 +79,13 @@
          (string (if trim-right
                      (string-right-trim chars-to-trim string)
                      string)))
+
     (with-output-to-string (stream)
       (loop for c across string do
         (if (char= c char)
             (when (not char-found)
-                  (write-char c stream)
-                  (setq char-found t))
+              (write-char c stream)
+              (setq char-found t))
             (progn
               (if char-found (setf char-found nil))
               (write-char c stream)))))))
