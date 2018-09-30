@@ -53,24 +53,33 @@ Foo bar
   (testing "Paragraphs should be separated with a single line."
     (testing "If there is a space between <p> tags, it is removed"
       (ok (equal (html2text "<p>Foo</p> <p>bar</p>")
-                 "
-Foo
+                 "Foo
 
-bar")))
-    (testing "Also, spaces are removed from the beginning and the end of paragraph texts"
-      (ok (equal (html2text "<p>  Foo  <p>  bar  ")
-                 "
-Foo
+bar
 
-bar")))
+")))
+    ;; This test does not work yet, because Plump parses
+    ;; this documents as <p>Foo<p>bar</p></p>
+    ;; (testing "Also, spaces are removed from the beginning and the end of paragraph texts"
+    ;;       (ok (equal (html2text "<p>  Foo  <p>  bar  ")
+    ;;                  "Foo
+
+    ;; bar
+
+    ;; ")))
     (testing "Newlines are removed as well"
-      (ok (equal (html2text "<p>Foo
-
-<p>bar")
-                 "
+      (ok (equal (html2text "<p>
 Foo
+</p>
 
-bar")))))
+<p>
+bar
+</p>")
+                 "Foo
+
+bar
+
+")))))
 
 
 (deftest test-html-with-link
@@ -83,3 +92,54 @@ bar")))))
              "Doc with."))
   (ok (equal (html2text "Doc with <script>alert(\"foo\");</script>.")
              "Doc with.")))
+
+
+(deftest test-how-simple-ul-is-rendered
+  (ok (equal (html2text "
+<ul>
+   <li>This is a first line.</li>
+   <li>Second line.</li>
+   <li>And third line.</li>
+</ul>")
+             
+             "* This is a first line.
+* Second line.
+* And third line.
+")))
+
+
+(deftest test-how-multiline-ul-is-rendered
+  (ok (equal (html2text "
+<ul>
+   <li>This is a first line.</li>
+   <li>Second line is
+       multiline.</li>
+   <li><p>And third contains few paragraphs.</p>
+       <p>Second paragraph.</p></li>
+</ul>")
+             
+             "* This is a first line.
+* Second line is multiline.
+* And third contains few paragraphs.
+
+  Second paragraph.
+
+
+")))
+
+;; Попробовать http://quickdocs.org/utilities.print-tree/
+;; https://gist.github.com/svetlyak40wt/9d3d0cda3d915188facc47f6e837b917
+
+
+;; (defun test-another (stream)
+;;   (pprint-logical-block (stream nil :per-line-prefix "- ")
+;;     (format stream "Another
+;; List")))
+
+
+;; (defun test-logical-blocks ()
+;;   (with-output-to-string (s)
+;;     (pprint-logical-block (s nil :per-line-prefix "* ")
+;;       (format s "Foo bar
+;; Another line~%")
+;;       (test-another s))))

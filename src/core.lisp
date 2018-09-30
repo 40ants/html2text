@@ -4,6 +4,8 @@
    (:import-from #:alexandria
                  #:ensure-list
                  #:make-keyword)
+   (:import-from #:html2text/utils
+                 #:write-pretty-string)
    (:export #:foo
             #:bar
             #:html2text
@@ -37,7 +39,7 @@
 
 (defmethod serialize ((tag t) (node plump:nesting-node))
   (let ((children (plump:children node))
-        (block-elements '(:p :style :script)))
+        (block-elements '(:p :style :script :ul :ol :li :div)))
     (loop with prev-node-was-block = t
           for idx below (length children)
           for node = (aref children idx)
@@ -65,14 +67,13 @@
 
 
 (defun normalize-whitespaces (string &key
-                                       (char #\space)
+                                       (chars-to-trim '(#\Newline #\Space #\Tab))
                                        (trim-left t)
                                        (trim-right t))
   "Returns a string with multiple spaces replaced by one, optionally trimmed."
   (check-type string string)
-  (check-type char character)
+  (check-type chars-to-trim list)
   (let* ((char-found nil)
-         (chars-to-trim (list char))
          (string (if trim-left
                      (string-left-trim chars-to-trim string)
                      string))
@@ -82,12 +83,13 @@
 
     (with-output-to-string (stream)
       (loop for c across string do
-        (if (char= c char)
+        (if (member c chars-to-trim :test #'char=)
             (when (not char-found)
-              (write-char c stream)
+              (write-char #\Space stream)
               (setq char-found t))
             (progn
-              (if char-found (setf char-found nil))
+              (when char-found
+                  (setf char-found nil))
               (write-char c stream)))))))
 
 
@@ -98,7 +100,8 @@
                                                  :trim-right *trim-right*))
          (trimmed-text (string-trim '(#\Newline)
                                     normalized-text)))
-    
+
+    (log:info "Serializing text node" trimmed-text)
     (write-string trimmed-text
                   *output-stream*)))
 
@@ -128,8 +131,17 @@
 
 
 (def-tag-serializer (:p)
-  (format *output-stream* "~2&")
-  (call-next-method))
+  (pprint-logical-block (*output-stream* nil)
+    (call-next-method)
+    (pprint-newline :mandatory *output-stream*)
+    (pprint-newline :mandatory *output-stream*)))
+
+
+(def-tag-serializer (:li)
+  (pprint-logical-block (*output-stream* nil :prefix "* ")
+    (call-next-method)
+    (pprint-indent :block -2 *output-stream*)
+    (pprint-newline :mandatory *output-stream*)))
 
 
 (def-tag-serializer (:a)
@@ -173,6 +185,7 @@
 
 (defun html2text (text)
   (check-type text string)
-  (let* ((document (plump:parse text)))
+  (let* ((document (plump:parse text))
+         (*print-pretty* t))
     (with-output-to-string (*output-stream*)
       (serialize nil document))))
