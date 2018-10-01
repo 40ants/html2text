@@ -107,8 +107,9 @@ bar
 * And third line.
 ")))
 
-
 ;; This case is not handled by python's html2text!
+
+
 (deftest test-how-multiline-ul-is-rendered
   (ok (equal (html2text "
 <ul>
@@ -128,6 +129,45 @@ bar
 
 
 * And last line.
+")))
+
+
+(deftest test-how-simple-ol-is-rendered
+  (ok (equal (html2text "
+<ol>
+   <li>This is a first line.</li>
+   <li>Second line.</li>
+   <li>And third line.</li>
+</ol>")
+             
+             "1. This is a first line.
+2. Second line.
+3. And third line.
+")))
+
+
+(deftest test-how-nested-ol-are-rendered
+  (ok (equal (html2text "
+<ol>
+   <li>This is a first line.</li>
+   <li>Variants:
+     <ol>
+       <li>First.</li>
+       <li>Second.</li>
+       <li>Third.</li>
+     </ol>
+   </li>
+   <li>And third line.</li>
+</ol>
+")
+             
+             "1. This is a first line.
+2. Variants:
+   1. First.
+   2. Second.
+   3. Third.
+
+3. And third line.
 ")))
 
 

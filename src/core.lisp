@@ -21,6 +21,14 @@
 (defparameter *tags-to-remove* '(:style :script))
 (defparameter *block-elements* '(:p :style :script :ul :ol :li :div :hr))
 
+;; It should be bound to :ul or :ol
+;; depending on the context.
+(defvar *list-style*)
+
+;; This variable will contain a sequential number for the nest <li> item
+;; when rendering :ol list.
+(defvar *list-number*)
+
 
 (defgeneric get-node-tag (node)
   (:method ((node t))
@@ -137,11 +145,32 @@
     (pprint-newline :mandatory *output-stream*)))
 
 
+(defun get-list-bullet ()
+  (case *list-style*
+    (:ol
+     (incf *list-number*)
+     (format nil "~A. " *list-number*))
+    (t "* ")))
+
+(def-tag-serializer (:ul)
+  (let ((*list-style* :ul))
+    (call-next-method)))
+
+
+(def-tag-serializer (:ol)
+  (let ((*list-style* :ol)
+        (*list-number* 0))
+    (pprint-newline :mandatory *output-stream*)
+    (call-next-method)))
+
+
 (def-tag-serializer (:li)
-  (pprint-logical-block (*output-stream* nil :prefix "* ")
-    (call-next-method)
-    (pprint-indent :block -2 *output-stream*)
-    (pprint-newline :mandatory *output-stream*)))
+  (let ((prefix (get-list-bullet)))
+    (pprint-logical-block (*output-stream* nil
+                                           :prefix prefix)
+      (call-next-method)
+      (pprint-indent :block (- (length prefix)) *output-stream*)
+      (pprint-newline :mandatory *output-stream*))))
 
 
 (def-tag-serializer (:a)
@@ -180,8 +209,6 @@
 ;; some
 ;; text
 ;; ```
-
-;; ol/li
 
 
 (defmethod serialize :around (tag node)
