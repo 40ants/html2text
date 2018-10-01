@@ -6,6 +6,8 @@
                  #:make-keyword)
    (:import-from #:html2text/utils
                  #:write-pretty-string)
+   (:import-from #:plump)
+   (:import-from #:log4cl)
    (:export #:foo
             #:bar
             #:html2text
@@ -17,6 +19,8 @@
 
 (defparameter *trim-left* t)
 (defparameter *trim-right* t)
+
+(defparameter *tags-to-remove* '(:style :script))
 
 
 (defgeneric get-node-tag (node)
@@ -39,11 +43,14 @@
 
 (defmethod serialize ((tag t) (node plump:nesting-node))
   (let ((children (plump:children node))
-        (block-elements '(:p :style :script :ul :ol :li :div)))
+        (block-elements '(:p :style :script :ul :ol :li :div))
+        (output-was-produced nil))
+    
     (loop with prev-node-was-block = t
           for idx below (length children)
           for node = (aref children idx)
           for node-tag = (get-node-tag node)
+          for tag-should-be-skipped = (member node-tag *tags-to-remove*)
           for next-node = (when (< idx (- (length children)
                                           1))
                             (aref children (+ idx 1)))
@@ -57,13 +64,20 @@
           ;; is transformed into the text, a whitespace before "bar"
           ;; should be keeped. But if we replace "span" with "p",
           ;; then space should be removed.
-          do (let ((*trim-left* prev-node-was-block)
-                   (*trim-right* next-node-is-block))
-               (serialize node-tag
-                          node))
-             (setf prev-node-was-block
-                   (member node-tag block-elements)))
-    (call-next-method)))
+          do (unless tag-should-be-skipped
+               (let ((*trim-left* prev-node-was-block)
+                     (*trim-right* next-node-is-block))
+                 (unless prev-node-was-block
+                   (log:info "Writing whitespace")
+                   (write-char #\Space *output-stream*))
+                 ;; Serialize should return non nil if tag didn't produce any output
+                 (when (serialize node-tag
+                                  node)
+                   (setf output-was-produced t)
+                   (setf prev-node-was-block
+                         (member node-tag block-elements))))))
+    (or (call-next-method)
+        output-was-produced)))
 
 
 (defun normalize-whitespaces (string &key
@@ -96,14 +110,20 @@
 (defmethod serialize ((tag t) (node plump:text-node))
   (let* ((text (plump:text node))
          (normalized-text (normalize-whitespaces text
-                                                 :trim-left *trim-left*
-                                                 :trim-right *trim-right*))
+                                                 :trim-left t
+                                                 :trim-right t
+                                                 ))
+         ;; TODO: Try to remove, because normalize-whitespaces can trim the string
          (trimmed-text (string-trim '(#\Newline)
                                     normalized-text)))
 
     (log:info "Serializing text node" trimmed-text)
-    (write-string trimmed-text
-                  *output-stream*)))
+    
+    (unless (string= trimmed-text "")
+      (write-string trimmed-text
+                    *output-stream*)
+      ;; We need to indicate that some value was written to the output
+      (values t))))
 
 
 (defmacro def-tag-serializer ((&rest tags) &body body)
@@ -116,17 +136,13 @@
 
 (def-tag-serializer (:b :strong)
   (write-string "**" *output-stream*)
-  (let ((*trim-left* nil)
-        (*trim-right* nil))
-    (call-next-method))
+  (call-next-method)
   (write-string "**" *output-stream*))
 
 
 (def-tag-serializer (:em :i :u)
   (write-string "_" *output-stream*)
-  (let ((*trim-left* nil)
-        (*trim-right* nil))
-    (call-next-method))
+  (call-next-method)
   (write-string "_" *output-stream*))
 
 
@@ -154,7 +170,7 @@
 
 
 ;; These tags are removed completely with content
-(def-tag-serializer (:style :script))
+;; (def-tag-serializer (:style :script))
 
 ;; blockquote
 ;; > some
@@ -175,11 +191,11 @@
 
 ;; img
 
-;; ul/ol/li
+;; ol/li
 
 
 (defmethod serialize :around (tag node)
-  (log:info "Serializing" tag node)
+  (log:debug "Serializing" tag node)
   (call-next-method))
 
 

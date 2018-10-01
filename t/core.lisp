@@ -89,9 +89,9 @@ bar
 
 (deftest test-style-and-script-should-be-remove
   (ok (equal (html2text "Doc with <style>.body {color: black;}</style>.")
-             "Doc with."))
+             "Doc with ."))
   (ok (equal (html2text "Doc with <script>alert(\"foo\");</script>.")
-             "Doc with.")))
+             "Doc with .")))
 
 
 (deftest test-how-simple-ul-is-rendered
@@ -108,6 +108,7 @@ bar
 ")))
 
 
+;; This case is not handled by python's html2text!
 (deftest test-how-multiline-ul-is-rendered
   (ok (equal (html2text "
 <ul>
@@ -116,6 +117,7 @@ bar
        multiline.</li>
    <li><p>And third contains few paragraphs.</p>
        <p>Second paragraph.</p></li>
+   <li>And last line.</li>
 </ul>")
              
              "* This is a first line.
@@ -125,21 +127,20 @@ bar
   Second paragraph.
 
 
+* And last line.
 ")))
 
-;; Попробовать http://quickdocs.org/utilities.print-tree/
-;; https://gist.github.com/svetlyak40wt/9d3d0cda3d915188facc47f6e837b917
 
+(deftest test-bold-in-the-paragraph
+  (ok (equal (html2text "<p>This is a multi
+  line
+  paragraph.<b>
+      This is a multi
+  line
+  span.</b>
+</p>")
+             ;; TODO: here should be a space before the first **
+             ;;       but I can't figure out how to implement this.
+             "This is a multi line paragraph. **This is a multi line span.**
 
-;; (defun test-another (stream)
-;;   (pprint-logical-block (stream nil :per-line-prefix "- ")
-;;     (format stream "Another
-;; List")))
-
-
-;; (defun test-logical-blocks ()
-;;   (with-output-to-string (s)
-;;     (pprint-logical-block (s nil :per-line-prefix "* ")
-;;       (format s "Foo bar
-;; Another line~%")
-;;       (test-another s))))
+")))

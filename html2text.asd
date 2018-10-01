@@ -4,8 +4,7 @@
            :license "BSD"
            :class :package-inferred-system
            :pathname "src"
-           :depends-on (:plump
-                                   "html2text/core")
+           :depends-on ("html2text/core")
            :description "Converts HTML text into the Markdown."
            :long-description
            #.(with-open-file (stream (merge-pathnames
