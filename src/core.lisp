@@ -68,7 +68,7 @@
                (let ((*trim-left* prev-node-was-block)
                      (*trim-right* next-node-is-block))
                  (unless prev-node-was-block
-                   (log:info "Writing whitespace")
+                   (log:debug "Writing whitespace")
                    (write-char #\Space *output-stream*))
                  ;; Serialize should return non nil if tag didn't produce any output
                  (when (serialize node-tag
@@ -117,7 +117,7 @@
          (trimmed-text (string-trim '(#\Newline)
                                     normalized-text)))
 
-    (log:info "Serializing text node" trimmed-text)
+    (log:debug "Serializing text node" trimmed-text)
     
     (unless (string= trimmed-text "")
       (write-string trimmed-text

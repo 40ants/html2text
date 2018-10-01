@@ -4,44 +4,42 @@
 
 .. insert-your badges like that:
 
-.. image:: https://travis-ci.org/40ants/cl-hamcrest.svg?branch=master
-    :target: https://travis-ci.org/40ants/cl-hamcrest
+.. image:: https://travis-ci.org/40ants/html2text.svg?branch=master
+    :target: https://travis-ci.org/40ants/html2text
 
 .. Everything starting from this commit will be inserted into the
    index page of the HTML documentation.
 .. include-from
 
-Give some introduction.
+WORK IN PROGRESS.
 
 Reasoning
 =========
 
-Explain why this project so outstanding and why it
-was created.
+There is great html2text python library, but I didn't found a way how to
+convert HTML to Markdown from Common Lisp. And made this library.
 
-You can give some examples. This is how common lisp
-code should be formatted:
-
-.. code-block:: common-lisp
-
-   (defvar log-item '(:|@message| "Some"
-                      :|@timestamp| 122434342
-                      ;; this field is wrong and
-                      ;; shouldn't be here
-                      :|@fields| nil))
-
-And this is how you can provide REPL examples:
+Example:
 
 .. code-block:: common-lisp-repl
 
-   TEST> (format nil "Blah minor: ~a"
-                     100500)
-   "Blah minor: 100500"
+   CL-USER> (html2text:html2text "
+   <p>A paragraph
+   which can be <b>multiline</b> and <em>can contain other tags</em>.
+   </p>
+   
+   <ul>
+     <li>Lisp is a great language</li>
+     <li>For the reason</li>
+   </ul>
+   ")
+   "A paragraph which can be **multiline** and _can contain other tags_ .
+   
+   * Lisp is a great language
+   * For the reason
+   "
+   CL-USER> 
 
-Roadmap
-=======
-
-Provide a Roadmap.
 
 .. Everything after this comment will be omitted from HTML docs.
 .. include-to
