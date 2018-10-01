@@ -17,8 +17,6 @@
 
 (defvar *output-stream* t)
 
-(defparameter *trim-left* t)
-(defparameter *trim-right* t)
 
 (defparameter *tags-to-remove* '(:style :script))
 
@@ -51,13 +49,7 @@
           for node = (aref children idx)
           for node-tag = (get-node-tag node)
           for tag-should-be-skipped = (member node-tag *tags-to-remove*)
-          for next-node = (when (< idx (- (length children)
-                                          1))
-                            (aref children (+ idx 1)))
-          for next-node-is-block = (if next-node
-                                       (member (get-node-tag next-node)
-                                               block-elements)
-                                       t)
+          
           ;; Here we track a type of the previous node,
           ;; to know if we need to trim leading whitespace
           ;; For example, when this HTML "<span>foo</span> bar"
@@ -65,17 +57,15 @@
           ;; should be keeped. But if we replace "span" with "p",
           ;; then space should be removed.
           do (unless tag-should-be-skipped
-               (let ((*trim-left* prev-node-was-block)
-                     (*trim-right* next-node-is-block))
-                 (unless prev-node-was-block
-                   (log:debug "Writing whitespace")
-                   (write-char #\Space *output-stream*))
-                 ;; Serialize should return non nil if tag didn't produce any output
-                 (when (serialize node-tag
-                                  node)
-                   (setf output-was-produced t)
-                   (setf prev-node-was-block
-                         (member node-tag block-elements))))))
+               (unless prev-node-was-block
+                 (log:debug "Writing whitespace")
+                 (write-char #\Space *output-stream*))
+               ;; Serialize should return non nil if tag didn't produce any output
+               (when (serialize node-tag
+                                node)
+                 (setf output-was-produced t)
+                 (setf prev-node-was-block
+                       (member node-tag block-elements)))))
     (or (call-next-method)
         output-was-produced)))
 
@@ -109,18 +99,12 @@
 
 (defmethod serialize ((tag t) (node plump:text-node))
   (let* ((text (plump:text node))
-         (normalized-text (normalize-whitespaces text
-                                                 :trim-left t
-                                                 :trim-right t
-                                                 ))
-         ;; TODO: Try to remove, because normalize-whitespaces can trim the string
-         (trimmed-text (string-trim '(#\Newline)
-                                    normalized-text)))
+         (normalized-text (normalize-whitespaces text)))
 
-    (log:debug "Serializing text node" trimmed-text)
+    (log:debug "Serializing text node" normalized-text)
     
-    (unless (string= trimmed-text "")
-      (write-string trimmed-text
+    (unless (string= normalized-text "")
+      (write-string normalized-text
                     *output-stream*)
       ;; We need to indicate that some value was written to the output
       (values t))))
