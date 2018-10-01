@@ -139,8 +139,31 @@ bar
   line
   span.</b>
 </p>")
-             ;; TODO: here should be a space before the first **
-             ;;       but I can't figure out how to implement this.
              "This is a multi line paragraph. **This is a multi line span.**
 
 ")))
+
+
+(deftest test-blockquote
+  (testing "If there is plaintext inside the tag, it should be streamlined."
+    (ok (equal (html2text "<blockquote>
+All the world's a stage, and all the men and women merely players: they have their exits and their entrances; and one man in his time plays many parts, his acts being seven ages.
+
+William Shakespeare
+</blockquote>")
+               "> All the world's a stage, and all the men and women merely players: they have their exits and their entrances; and one man in his time plays many parts, his acts being seven ages. William Shakespeare"
+               )))
+
+  
+  (testing "If there are some tags inside, they are rendered as usual, but prefixed with \"> \"."
+    (ok (equal (html2text "<blockquote>
+<p>All the world's a stage, and all the men and women merely players: they have their exits and their entrances; and one man in his time plays many parts, his acts being seven ages.</p>
+
+<p>William Shakespeare</p>
+</blockquote>")
+               "> All the world's a stage, and all the men and women merely players: they have their exits and their entrances; and one man in his time plays many parts, his acts being seven ages.
+>
+> William Shakespeare
+>
+> "))))
+

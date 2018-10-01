@@ -153,12 +153,9 @@
             url)))
 
 
-;; These tags are removed completely with content
-;; (def-tag-serializer (:style :script))
-
-;; blockquote
-;; > some
-;; > text
+(def-tag-serializer (:blockquote)
+  (pprint-logical-block (*output-stream* nil :per-line-prefix "> ")
+    (call-next-method)))
 
 ;; hr
 ;;
