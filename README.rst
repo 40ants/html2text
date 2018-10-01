@@ -44,13 +44,8 @@ Example:
 .. Everything after this comment will be omitted from HTML docs.
 .. include-to
 
-Building Documentation
-======================
-
-Provide instruction how to build or use your library.
-
 How to build documentation
---------------------------
+==========================
 
 To build documentation, you need a Sphinx. It is
 documentaion building tool written in Python.
