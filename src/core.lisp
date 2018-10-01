@@ -19,6 +19,7 @@
 
 
 (defparameter *tags-to-remove* '(:style :script))
+(defparameter *block-elements* '(:p :style :script :ul :ol :li :div :hr))
 
 
 (defgeneric get-node-tag (node)
@@ -41,7 +42,6 @@
 
 (defmethod serialize ((tag t) (node plump:nesting-node))
   (let ((children (plump:children node))
-        (block-elements '(:p :style :script :ul :ol :li :div))
         (output-was-produced nil))
     
     (loop with prev-node-was-block = t
@@ -65,7 +65,7 @@
                                 node)
                  (setf output-was-produced t)
                  (setf prev-node-was-block
-                       (member node-tag block-elements)))))
+                       (member node-tag *block-elements*)))))
     (or (call-next-method)
         output-was-produced)))
 
@@ -157,10 +157,13 @@
   (pprint-logical-block (*output-stream* nil :per-line-prefix "> ")
     (call-next-method)))
 
-;; hr
-;;
-;; ***
-;;
+
+(def-tag-serializer (:hr)
+  (write-string "***" *output-stream*)
+  (terpri *output-stream*)
+  (terpri *output-stream*)
+  (values t))
+
 
 ;; code - `some text`
 

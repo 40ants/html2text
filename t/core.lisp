@@ -167,3 +167,17 @@ William Shakespeare
 >
 > "))))
 
+
+(deftest test-hr-tag
+  (ok (equal (html2text "<p>First paragraph.</p>
+<hr/>
+<p>Second paragraph.</p>")
+             "First paragraph.
+
+***
+
+Second paragraph.
+
+"
+             )))
+
