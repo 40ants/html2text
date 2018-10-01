@@ -165,6 +165,14 @@
   (values t))
 
 
+(def-tag-serializer (:img)
+  (let ((url (or (plump:attribute node "src")
+                 "")))
+    (format *output-stream* "![](~A)"
+            url))
+  (values t))
+
+
 ;; code - `some text`
 
 ;; <pre><code>
@@ -172,8 +180,6 @@
 ;; some
 ;; text
 ;; ```
-
-;; img
 
 ;; ol/li
 

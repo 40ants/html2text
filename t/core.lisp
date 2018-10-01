@@ -181,3 +181,20 @@ Second paragraph.
 "
              )))
 
+
+(deftest test-img
+  (testing "Simple case"
+    (ok (equal (html2text "<img src=\"http://example.com/img.png\">")
+               "![](http://example.com/img.png)")))
+
+  ;; Note, there is a space after the image in the output.
+  ;; Don't want to think how to get rid of it.
+  ;; Python's html2text renders it with two spaces, like that
+  ;; [ ![](http://example.com/img.png) ](http://blah.org)
+  ;; but I think the right solution is no spaces either side.
+  (testing "When image is inside the \"a\" tag"
+    (ok (equal (html2text "<a href=\"http://blah.org\">
+<img src=\"http://example.com/img.png\">
+</a>")
+               "[![](http://example.com/img.png) ](http://blah.org)"))))
+
