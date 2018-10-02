@@ -238,3 +238,8 @@ Second paragraph.
 </a>")
                "[![](http://example.com/img.png) ](http://blah.org)"))))
 
+
+(deftest test-simple-code-block
+  (ok (equal (html2text "This is <code>a code</code> in the sentence.")
+             "This is `a code` in the sentence.")))
+

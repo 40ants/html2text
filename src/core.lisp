@@ -152,6 +152,7 @@
      (format nil "~A. " *list-number*))
     (t "* ")))
 
+
 (def-tag-serializer (:ul)
   (let ((*list-style* :ul))
     (call-next-method)))
@@ -200,6 +201,12 @@
     (format *output-stream* "![](~A)"
             url))
   (values t))
+
+
+(def-tag-serializer (:code)
+  (write-char #\` *output-stream*)
+  (call-next-method)
+  (write-char #\` *output-stream*))
 
 
 ;; code - `some text`
