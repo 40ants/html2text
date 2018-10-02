@@ -19,7 +19,7 @@
 
 
 (defparameter *tags-to-remove* '(:style :script))
-(defparameter *block-elements* '(:p :style :script :ul :ol :li :div :hr))
+(defparameter *block-elements* '(:p :style :script :ul :ol :li :div :hr :pre))
 
 ;; It should be bound to :ul or :ol
 ;; depending on the context.
@@ -28,6 +28,9 @@
 ;; This variable will contain a sequential number for the nest <li> item
 ;; when rendering :ol list.
 (defvar *list-number*)
+
+(defvar *in-pre* nil
+  "This variable will be set to 't when rendering content inside <pre> block.")
 
 
 (defgeneric get-node-tag (node)
@@ -50,13 +53,14 @@
 
 (defmethod serialize ((tag t) (node plump:nesting-node))
   (let ((children (plump:children node))
-        (output-was-produced nil))
+        (output-was-produced nil)
+        (node-tag (get-node-tag node)))
     
     (loop with prev-node-was-block = t
           for idx below (length children)
-          for node = (aref children idx)
-          for node-tag = (get-node-tag node)
-          for tag-should-be-skipped = (member node-tag *tags-to-remove*)
+          for child-node = (aref children idx)
+          for child-node-tag = (get-node-tag child-node)
+          for tag-should-be-skipped = (member child-node-tag *tags-to-remove*)
           
           ;; Here we track a type of the previous node,
           ;; to know if we need to trim leading whitespace
@@ -69,11 +73,16 @@
                  (log:debug "Writing whitespace")
                  (write-char #\Space *output-stream*))
                ;; Serialize should return non nil if tag didn't produce any output
-               (when (serialize node-tag
-                                node)
+               (when (serialize child-node-tag
+                                child-node)
                  (setf output-was-produced t)
                  (setf prev-node-was-block
-                       (member node-tag *block-elements*)))))
+                       (or (member child-node-tag *block-elements*)
+                           ;; This is a special case because if code
+                           ;; is nested inside pre, we are rendering it
+                           ;; as a block
+                           (and (eql node-tag :pre)
+                                (eql child-node-tag :code)))))))
     (or (call-next-method)
         output-was-produced)))
 
@@ -85,24 +94,28 @@
   "Returns a string with multiple spaces replaced by one, optionally trimmed."
   (check-type string string)
   (check-type chars-to-trim list)
-  (let* ((char-found nil)
-         (string (if trim-left
-                     (string-left-trim chars-to-trim string)
-                     string))
-         (string (if trim-right
-                     (string-right-trim chars-to-trim string)
-                     string)))
+  (if *in-pre*
+      (string-trim '(#\Newline)
+                   string)
+      ;; else
+      (let* ((char-found nil)
+             (string (if trim-left
+                         (string-left-trim chars-to-trim string)
+                         string))
+             (string (if trim-right
+                         (string-right-trim chars-to-trim string)
+                         string)))
 
-    (with-output-to-string (stream)
-      (loop for c across string do
-        (if (member c chars-to-trim :test #'char=)
-            (when (not char-found)
-              (write-char #\Space stream)
-              (setq char-found t))
-            (progn
-              (when char-found
-                  (setf char-found nil))
-              (write-char c stream)))))))
+        (with-output-to-string (stream)
+          (loop for c across string do
+            (if (member c chars-to-trim :test #'char=)
+                (when (not char-found)
+                  (write-char #\Space stream)
+                  (setq char-found t))
+                (progn
+                  (when char-found
+                    (setf char-found nil))
+                  (write-char c stream))))))))
 
 
 (defmethod serialize ((tag t) (node plump:text-node))
@@ -110,7 +123,7 @@
          (normalized-text (normalize-whitespaces text)))
 
     (log:debug "Serializing text node" normalized-text)
-    
+
     (unless (string= normalized-text "")
       (write-string normalized-text
                     *output-stream*)
@@ -204,18 +217,32 @@
 
 
 (def-tag-serializer (:code)
-  (write-char #\` *output-stream*)
-  (call-next-method)
-  (write-char #\` *output-stream*))
+  (cond
+    (*in-pre*
+     (pprint-newline :mandatory *output-stream*)
+     (pprint-newline :mandatory *output-stream*)
+     (write-string "```" *output-stream*)
+     
+     (pprint-newline :mandatory *output-stream*)
+     (call-next-method)
+     (pprint-newline :mandatory *output-stream*)
+     
+     (write-string "```" *output-stream*)
+     (pprint-newline :mandatory *output-stream*)
+     (pprint-newline :mandatory *output-stream*))
+    
+    (t
+     (write-char #\` *output-stream*)
+     (call-next-method)
+     (write-char #\` *output-stream*)))
+  ;; We need to indicate that we've wrote some output
+  ;; by returning t
+  (values t))
 
 
-;; code - `some text`
-
-;; <pre><code>
-;; ```
-;; some
-;; text
-;; ```
+(def-tag-serializer (:pre)
+  (let ((*in-pre* t))
+    (call-next-method)))
 
 
 (defmethod serialize :around (tag node)
@@ -228,4 +255,5 @@
   (let* ((document (plump:parse text))
          (*print-pretty* t))
     (with-output-to-string (*output-stream*)
-      (serialize nil document))))
+      (pprint-logical-block (*output-stream* nil)
+        (serialize nil document)))))

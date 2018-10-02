@@ -140,7 +140,8 @@ bar
    <li>And third line.</li>
 </ol>")
              
-             "1. This is a first line.
+             "
+1. This is a first line.
 2. Second line.
 3. And third line.
 ")))
@@ -161,7 +162,8 @@ bar
 </ol>
 ")
              
-             "1. This is a first line.
+             "
+1. This is a first line.
 2. Variants:
    1. First.
    2. Second.
@@ -242,4 +244,42 @@ Second paragraph.
 (deftest test-simple-code-block
   (ok (equal (html2text "This is <code>a code</code> in the sentence.")
              "This is `a code` in the sentence.")))
+
+
+(deftest test-code-block-surrounded-by-pre
+  (testing "How <pre><code> block is rendered when inline."
+    (ok (equal (html2text "This is <pre><code>a code</code></pre> in the sentence.")
+               "This is
+
+```
+a code
+```
+
+in the sentence.")))
+  
+  (testing "How does multiline code block works"
+    (ok (equal (html2text "How about
+
+<pre>
+<code>
+a snippet
+of code
+
+in the middle
+of the text?
+</code>
+</pre>
+
+Is it ok?")
+               "How about
+
+```
+a snippet
+of code
+
+in the middle
+of the text?
+```
+
+Is it ok?"))))
 
