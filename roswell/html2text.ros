@@ -3,6 +3,7 @@
 #|
 exec ros -Q -- $0 "$@"
 |#
+(declaim (optimize (debug 3)))
 (progn ;;init forms
   (ros:ensure-asdf)
   #+quicklisp (ql:quickload '(html2text
@@ -16,18 +17,9 @@ exec ros -Q -- $0 "$@"
 (in-package :ros.script.html2text)
 
 
-(defun analyze (repository &key log token)
-  (declare (ignorable log token))
-  ;; Add some real code here
-  (format t "Analizing ~A~%" repository))
-
-
 (defmain main ((version "Show program version and exit."
-                      :flag t)
-               (log   "Filename to write log to.")
-               (token "GitHub personal access token."
-                      :env-var "TOKEN")
-               &rest repository)
+                        :flag t)
+               &rest files)
   "Utility to analyze github repositories."
 
   (when version
@@ -36,10 +28,12 @@ exec ros -Q -- $0 "$@"
       (format t "Version: ~A~%" version)
       (uiop:quit 0)))
 
-  ;; Making real work
-  (loop for repo in repository
-        do (analyze repo
-                    :log log
-                    :token token)))
+  (when files
+    (loop for filename in files
+          for content = (alexandria:read-file-into-string filename)
+          for converted = (html2text:html2text content)
+          do (write-string converted)
+             (terpri)))
+  )
 
 ;;; vim: set ft=lisp lisp:

@@ -55,9 +55,7 @@ Foo bar
       (ok (equal (html2text "<p>Foo</p> <p>bar</p>")
                  "Foo
 
-bar
-
-")))
+bar")))
     ;; This test does not work yet, because Plump parses
     ;; this documents as <p>Foo<p>bar</p></p>
     ;; (testing "Also, spaces are removed from the beginning and the end of paragraph texts"
@@ -77,9 +75,7 @@ bar
 </p>")
                  "Foo
 
-bar
-
-")))))
+bar")))))
 
 
 (deftest test-html-with-link
@@ -105,6 +101,7 @@ bar
              "* This is a first line.
 * Second line.
 * And third line.
+
 ")))
 
 ;; This case is not handled by python's html2text!
@@ -123,12 +120,13 @@ bar
              
              "* This is a first line.
 * Second line is multiline.
+
 * And third contains few paragraphs.
 
   Second paragraph.
 
-
 * And last line.
+
 ")))
 
 
@@ -144,6 +142,7 @@ bar
 1. This is a first line.
 2. Second line.
 3. And third line.
+
 ")))
 
 
@@ -165,11 +164,13 @@ bar
              "
 1. This is a first line.
 2. Variants:
+
    1. First.
    2. Second.
    3. Third.
 
 3. And third line.
+
 ")))
 
 
@@ -205,9 +206,7 @@ William Shakespeare
 </blockquote>")
                "> All the world's a stage, and all the men and women merely players: they have their exits and their entrances; and one man in his time plays many parts, his acts being seven ages.
 >
-> William Shakespeare
->
-> "))))
+> William Shakespeare"))))
 
 
 (deftest test-hr-tag
