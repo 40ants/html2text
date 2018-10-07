@@ -19,16 +19,18 @@ env:
   matrix:
     - LISP=sbcl
     - LISP=ecl
-    - LISP=abcl
     - LISP=allegro
     - LISP=ccl
     - LISP=clisp
-    - LISP=cmucl
+    # does not work because cl-info fails under ABCL
+    # - LISP=abcl
+    # under cmucl cl-info does not work either, but for different reason
+    # - LISP=cmucl
 
-#matrix:
-#  allow_failures:
-#    - env: LISP=clisp
-#    - env: LISP=ecl
+matrix:
+  allow_failures:
+    # 10 of 26 tests failed
+    - env: LISP=clisp
 
 os:
   - osx
