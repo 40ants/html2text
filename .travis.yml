@@ -37,11 +37,12 @@ os:
 install:
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
   - ros install rove
+  - ros install 40ants/cl-info
+  - ros install 40ants/cl-hamcrest
 
 before_script:
   - ros --version
   - ros config
-  - ros install 40ants/cl-info
   - cl-info
 
 script:
