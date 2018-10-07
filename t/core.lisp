@@ -1,9 +1,13 @@
 (defpackage #:html2text-test/core
   (:use #:cl
-        #:html2text/core
         #:rove
         #:hamcrest/rove)
-  (:shadow #:write))
+  (:shadowing-import-from #:html2text/core
+                          #:write)
+  (:import-from #:html2text/core
+                #:html2text
+                #:text-block
+                #:inline-block))
 (in-package html2text-test/core)
 
 
