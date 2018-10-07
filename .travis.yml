@@ -18,12 +18,12 @@ env:
     - ROSWELL_INSTALL_DIR=$HOME/.roswell
   matrix:
     - LISP=sbcl
-#    - LISP=ecl
-#    - LISP=abcl
-#    - LISP=allegro
+    - LISP=ecl
+    - LISP=abcl
+    - LISP=allegro
     - LISP=ccl
-#    - LISP=clisp
-#    - LISP=cmucl
+    - LISP=clisp
+    - LISP=cmucl
 
 #matrix:
 #  allow_failures:
@@ -32,7 +32,7 @@ env:
 
 os:
   - osx
-#  - linux
+  - linux
 
 install:
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
