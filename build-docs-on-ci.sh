@@ -8,7 +8,7 @@ set -e
 # builds which are running for pull requests will have
 # TRAVIS_BRANCH=reblocks, but TRAVIS_PULL_REQUEST_BRANCH=the-branch
 # and TRAVIS_PULL_REQUEST=42 where 42 is a pull request number
-if [ "$TRAVIS_BRANCH" = "fixing-travis" -a "$TRAVIS_PULL_REQUEST" = "false" -a "$LISP" = "ccl" -a "$TRAVIS_OS_NAME" = "linux" ]; then
+if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" -a "$LISP" = "ccl" -a "$TRAVIS_OS_NAME" = "linux" ]; then
     virtualenv env --python=python2.7
     source env/bin/activate
     python --version
