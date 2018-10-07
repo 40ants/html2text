@@ -12,8 +12,8 @@ if [ "$TRAVIS_BRANCH" = "fixing-travis" -a "$TRAVIS_PULL_REQUEST" = "false" -a "
     virtualenv env
     source env/bin/activate
     pip --version
-#    pip install pyopenssl
     pip install -r docs/requirements.txt
+    ros install 40ants/cldomain
     ./build-docs.ros
 else
     echo "Skipping documentation build because environment is not suitable."
