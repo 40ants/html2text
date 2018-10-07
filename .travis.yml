@@ -11,6 +11,7 @@ addons:
     packages:
       - libc6-i386
       - openjdk-7-jre
+      - python-virtualenv
 env:
   global:
     - PATH=~/.roswell/bin:$PATH
@@ -43,9 +44,11 @@ install:
   - ros install 40ants/cl-hamcrest
 
 before_script:
+  - env
   - ros --version
   - ros config
   - cl-info
 
 script:
   - rove html2text-test.asd
+  - ./build-docs-on-ci.sh
