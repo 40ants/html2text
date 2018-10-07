@@ -12,7 +12,7 @@ addons:
       - libc6-i386
       - openjdk-7-jre
 env:
- global:
+  global:
     - PATH=~/.roswell/bin:$PATH
     # - ROSWELL_BRANCH=master
     - ROSWELL_INSTALL_DIR=$HOME/.roswell
