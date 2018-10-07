@@ -15,14 +15,12 @@ env:
   global:
     - PATH=~/.roswell/bin:$PATH
     - ROSWELL_INSTALL_DIR=$HOME/.roswell
-    # - ROSWELL_REPO=https://github.com/svetlyak40wt/roswell
-    # - ROSWELL_BRANCH=fix-error-output
   matrix:
     - LISP=sbcl-bin
-    # - LISP=ecl
-    # - LISP=allegro
-    # - LISP=ccl
-    # - LISP=clisp
+    - LISP=ecl
+    - LISP=allegro
+    - LISP=ccl
+    - LISP=clisp
     # does not work because cl-info fails under ABCL
     # - LISP=abcl
     # under cmucl cl-info does not work either, but for different reason
@@ -34,7 +32,7 @@ matrix:
     - env: LISP=clisp
 
 os:
-#  - osx
+  - osx
   - linux
 
 install:
