@@ -8,9 +8,10 @@ set -e
 # builds which are running for pull requests will have
 # TRAVIS_BRANCH=reblocks, but TRAVIS_PULL_REQUEST_BRANCH=the-branch
 # and TRAVIS_PULL_REQUEST=42 where 42 is a pull request number
-if [ "$TRAVIS_BRANCH" = "fixing-travis" -a "$TRAVIS_PULL_REQUEST" = "false" -a "$LISP" = "ccl" ]; then
+if [ "$TRAVIS_BRANCH" = "fixing-travis" -a "$TRAVIS_PULL_REQUEST" = "false" -a "$LISP" = "ccl" -a "$TRAVIS_OS_NAME" = "linux" ]; then
     virtualenv env
     source env/bin/activate
+    pip --version
     pip install -r docs/requirements.txt
     ./build-docs.ros
 else
