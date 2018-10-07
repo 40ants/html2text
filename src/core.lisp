@@ -13,7 +13,10 @@
   (:export #:foo
            #:bar
            #:html2text
-           #:serialize))
+           #:serialize
+           #:text-block
+           #:write
+           #:inline-block))
 (in-package html2text/core)
 
 
@@ -53,21 +56,14 @@
   (make-keyword (string-upcase (plump:tag-name node))))
 
 
-(defparameter *written-newlines* 0)
+(defvar *written-newlines*)
+
+(defvar *block-index*)
 
 
 (defun write (&rest strings)
   ;; First we need to generate newlines requested by previous blocks of text
-  ;; (when (> *written-newlines* 0)
-  ;;   (log:info "Writing newlines" *written-newlines*)
-  ;;   (loop repeat *written-newlines*
-  ;;         do (pprint-newline :mandatory *output-stream*)))
-  
   (let* ((string (last-elt strings))
-         ;; (last-index (when (> end start)
-         ;;               (- end 1)))
-         ;; (last-char (when last-index
-         ;;              (elt string last-index)))
          (num-newlines (loop :for idx
                              :downfrom (- (length string)
                                           1)
@@ -77,18 +73,15 @@
                                :do (return result)
                              :summing 1 :into result)))
     
-    ;; (when (and last-char
-    ;;            (not (char= last-char #\Newline)))
-    ;;   (log:info "Resetting to 0 string")
-    ;;   (setf *written-newlines* 0))
     (when num-newlines
-      (log:info "Resetting newlines to" num-newlines)
+      (log:debug "Resetting newlines to" num-newlines)
       (setf *written-newlines* num-newlines)))
 
   (loop for string in strings
         for string-without-newlines = (string-trim '(#\Newline) string)
-        do (write-string string-without-newlines
-                         *output-stream*))
+        do (log:debug "Writing" string-without-newlines)
+           (write-string string-without-newlines
+                               *output-stream*))
   
   ;; We need to indicate that something was written
   ;; to be able to put spaces between inline elements.
@@ -97,78 +90,63 @@
 
 (defun %write-newlines-if-needed ()
   (when (> *written-newlines* 0)
-    (log:info "Writing newlines" *written-newlines*)
+    (log:debug "Writing newlines" *written-newlines*)
     (loop repeat *written-newlines*
-          do (pprint-newline :mandatory *output-stream*))))
+          do (pprint-newline :mandatory *output-stream*))
+    (setf *written-newlines* 0)))
+
 
 (defmacro text-block ((&key
+                         (name "")
                          prefix
-                         per-line-prefix)
+                         per-line-prefix
+                         margin
+                         margin-top
+                         margin-bottom)
                       &body body)
-  (let ((pprint-options (append (when prefix
+  (declare (ignorable name))
+  (let ((margin-top (or margin-top margin))
+        (margin-bottom (or margin-bottom margin))
+        (pprint-options (append (when prefix
                                   (list :prefix prefix))
                                 (when per-line-prefix
                                   (list :per-line-prefix per-line-prefix)))))
     `(progn
+       (unless (zerop *block-index*)
+         (when (and ,margin-top (> ,margin-top 0))
+           (ensure-empty-line))
+
+         (ensure-newline))
+       
+       (incf *block-index*)
+       
        (%write-newlines-if-needed)
+       
        (pprint-logical-block (*output-stream* nil
                                               ,@pprint-options)
-         ,@body))))
+         (let ((*block-index* 0))
+           ,@body))
+       
+       (ensure-newline)
 
-;; (defclass stream-with-newlines-counter (gray:fundamental-character-output-stream)
-;;   ((original-stream :initarg :original-stream
-;;                     :reader get-original-stream)))
-
-
-;; (defmethod gray:stream-write-char ((stream stream-with-newlines-counter) char)
-;;   (unless (char= char #\Newline)
-;;     (log:info "Resetting to 0 in char")
-;;     (setf *written-newlines* 0))
-;;   (gray:stream-write-char (get-original-stream stream)
-;;               char))
+       (when (and ,margin-bottom
+                  (> ,margin-bottom 0))
+         (ensure-empty-line)))))
 
 
-;; (defmethod gray:stream-write-string ((stream stream-with-newlines-counter) string &optional start end)
-;;   (log:info "Writing string" (subseq string start end))
-;;   (let* (;; (last-index (when (> end start)
-;;          ;;               (- end 1)))
-;;          ;; (last-char (when last-index
-;;          ;;              (elt string last-index)))
-;;          (num-newlines (loop :for idx
-;;                              :downfrom (- (or end
-;;                                               (length string))
-;;                                           1)
-;;                                :to (or start 0)
-;;                              :for char = (elt string idx)
-;;                              :unless (char= char #\Newline)
-;;                                :do (return result)
-;;                              :summing 1 :into result)))
-    
-;;     ;; (when (and last-char
-;;     ;;            (not (char= last-char #\Newline)))
-;;     ;;   (log:info "Resetting to 0 string")
-;;     ;;   (setf *written-newlines* 0))
-;;     (when num-newlines
-;;       (log:info "Resetting newlines to" num-newlines)
-;;       (setf *written-newlines* num-newlines)))
-;;   (gray:stream-write-string (get-original-stream stream)
-;;                             string
-;;                             start
-;;                             end))
+(defmacro inline-block ((&key
+                         (name ""))
+                      &body body)
+  (declare (ignorable name))
+  `(progn
+     (incf *block-index*)
 
-;; (defmethod gray:stream-line-column ((stream stream-with-newlines-counter))
-;;   (gray:stream-line-column (get-original-stream stream)))
-
-
-;; (defun ensure-empty-line ()
-;;   "Ensures there is a one empty line between previosly written block and the next one."
-;;   (loop
-;;     when (>= *written-newlines* 2)
-;;       do (return)
-         
-;;     do (pprint-newline :mandatory *output-stream*)
-;;        (incf *written-newlines*)
-;;        (log:info "Incremented to" *written-newlines*)))
+     ;; inline element can be preceded by a block
+     ;; after which we need to put a newline or an empty line
+     (%write-newlines-if-needed)
+     
+     (let ((*block-index* 0))
+       ,@body)))
 
 
 (defun ensure-newline ()
@@ -176,29 +154,22 @@
   ;; (error "Need to really print before real write")
   (cond
     ((< *written-newlines* 1)
-     ;; (pprint-newline :mandatory *output-stream*)
      (incf *written-newlines*)
-     (log:info "Incremented to" *written-newlines*))
-    (t (log:info "Newline already written" *written-newlines*)))
-  ;; (when (> *written-newlines* 2)
-  ;;   (pprint-newline :mandatory *output-stream*)
-  ;;   (incf *written-newlines*)
-  ;;   (log:info "Incremented to" *written-newlines*))
-  )
+     (log:debug "Incremented to" *written-newlines*))
+    (t (log:debug "Newline already written" *written-newlines*))))
 
 
 (defun ensure-empty-line ()
   "Ensures there is a one empty line between previosly written block and the next one."
   ;; (error "Need to really print before real write")
+  ;; (log:debug "Ensuring empty line")
   (when (< *written-newlines* 1)
-    ;; (pprint-newline :mandatory *output-stream*)
     (incf *written-newlines*)
-    (log:info "Incremented to" *written-newlines*))
+    (log:debug "Incremented to" *written-newlines*))
   
   (when (< *written-newlines* 2)
-    ;; (pprint-newline :mandatory *output-stream*)
     (incf *written-newlines*)
-    (log:info "Incremented to" *written-newlines*)))
+    (log:debug "Incremented to" *written-newlines*)))
 
 
 (defmethod serialize ((tag t) (node plump:nesting-node))
@@ -273,9 +244,9 @@
          (normalized-text (normalize-whitespaces text)))
 
     (unless (string= normalized-text "")
-      (log:info "Serializing text node" normalized-text)
-      
-      (text-block ()
+      (log:debug "Serializing text node" normalized-text)
+
+      (inline-block ()
         (write normalized-text))
       
       ;; We need to indicate that some value was written to the output
@@ -305,10 +276,7 @@
 (def-tag-serializer (:p)
   (text-block ()
     (call-next-method)
-    (ensure-empty-line)
-    ;; (pprint-newline :mandatory *output-stream*)
-    ;; (pprint-newline :mandatory *output-stream*)
-    ))
+    (ensure-empty-line)))
 
 
 (defun get-list-bullet ()
@@ -321,26 +289,22 @@
 
 (def-tag-serializer (:ul)
   (let ((*list-style* :ul))
-    (call-next-method)
-    (ensure-newline)
-    ;; (pprint-newline :mandatory *output-stream*)
-    ))
+    (text-block (:margin 1)
+      (call-next-method))))
 
 
 (def-tag-serializer (:ol)
   (let ((*list-style* :ol)
         (*list-number* 0))
-    (ensure-empty-line)
-    (call-next-method)
-    (ensure-empty-line)))
+    (text-block (:margin 1)
+      (call-next-method))))
 
 
 (def-tag-serializer (:li)
   (let ((prefix (get-list-bullet)))
     (text-block (:prefix prefix)
       (call-next-method)
-      (pprint-indent :block (- (length prefix)) *output-stream*)
-      (ensure-newline))))
+      (pprint-indent :block (- (length prefix)) *output-stream*))))
 
 
 (def-tag-serializer (:a)
@@ -357,9 +321,8 @@
 
 
 (def-tag-serializer (:hr)
-  (ensure-empty-line)
-  (write "***")
-  (ensure-empty-line)
+  (text-block (:margin 1)
+    (write "***"))
   (values t))
 
 
@@ -373,29 +336,21 @@
 (def-tag-serializer (:code)
   (cond
     (*in-pre*
-     (ensure-empty-line)
+     (text-block (:margin 1)
+       (text-block ()
+         (write "```"))
+       
+       (text-block ()
+         (call-next-method))
      
-     (text-block ()
-       (write "```"))
-
-     (break)
-     (ensure-newline)
-     (break)
-     
-     (text-block ()
-       (call-next-method))
-     
-     (ensure-newline)
-     
-     (text-block ()
-       (write "```"))
-     
-     (ensure-empty-line))
+       (text-block ()
+         (write "```"))))
     
     (t
-     (write "`")
-     (call-next-method)
-     (write "`")))
+     (inline-block ()
+       (write "`")
+       (call-next-method)
+       (write "`"))))
   ;; We need to indicate that we've wrote some output
   ;; by returning t
   (values t))
@@ -415,7 +370,8 @@
   (check-type text string)
   (let* ((document (plump:parse text))
          (*print-pretty* t)
-         (*written-newlines* 0))
+         (*written-newlines* 0)
+         (*block-index* 0))
     (with-output-to-string (*output-stream*)
       
       (pprint-logical-block (*output-stream* nil)

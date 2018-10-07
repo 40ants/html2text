@@ -2,7 +2,8 @@
   (:use #:cl
         #:html2text/core
         #:rove
-        #:hamcrest/rove))
+        #:hamcrest/rove)
+  (:shadow #:write))
 (in-package html2text-test/core)
 
 
@@ -22,6 +23,7 @@ Foo bar
   (testing "Whitespaces should be normalized."
     (ok (equal (html2text "   foo    bar   ")
                "foo bar"))))
+
 
 (deftest test-html-with-single-text-node
   (ok (equal (html2text "<html>Foo bar</html>")
@@ -100,9 +102,7 @@ bar")))))
              
              "* This is a first line.
 * Second line.
-* And third line.
-
-")))
+* And third line.")))
 
 ;; This case is not handled by python's html2text!
 
@@ -120,14 +120,11 @@ bar")))))
              
              "* This is a first line.
 * Second line is multiline.
-
 * And third contains few paragraphs.
 
   Second paragraph.
 
-* And last line.
-
-")))
+* And last line.")))
 
 
 (deftest test-how-simple-ol-is-rendered
@@ -138,12 +135,9 @@ bar")))))
    <li>And third line.</li>
 </ol>")
              
-             "
-1. This is a first line.
+             "1. This is a first line.
 2. Second line.
-3. And third line.
-
-")))
+3. And third line.")))
 
 
 (deftest test-how-nested-ol-are-rendered
@@ -161,17 +155,14 @@ bar")))))
 </ol>
 ")
              
-             "
-1. This is a first line.
+             "1. This is a first line.
 2. Variants:
 
    1. First.
    2. Second.
    3. Third.
 
-3. And third line.
-
-")))
+3. And third line.")))
 
 
 (deftest test-bold-in-the-paragraph
@@ -182,9 +173,7 @@ bar")))))
   line
   span.</b>
 </p>")
-             "This is a multi line paragraph. **This is a multi line span.**
-
-")))
+             "This is a multi line paragraph. **This is a multi line span.** ")))
 
 
 (deftest test-blockquote
@@ -217,10 +206,7 @@ William Shakespeare
 
 ***
 
-Second paragraph.
-
-"
-             )))
+Second paragraph.")))
 
 
 (deftest test-img
@@ -282,3 +268,125 @@ of the text?
 
 Is it ok?"))))
 
+
+(defmacro get-output (blocks)
+  `(let ((*print-pretty* t)
+         (html2text/core::*written-newlines* 0)
+         (html2text/core::*block-index* 0))
+     
+     (with-output-to-string (html2text/core::*output-stream*)
+       ,blocks)))
+
+(defmacro compare-output (blocks expected)
+  `(ok (string=
+        (get-output ,blocks)
+        ,expected)))
+
+
+(deftest test-blocks-margins
+  (compare-output
+   (text-block ()
+     (inline-block ()
+       (write "Foo"))
+
+     ;; Here we expect "Bar" will be surrounded
+     ;; only by one empty line from top and bottom
+     (text-block (:margin 1)
+       (text-block (:margin 1)
+         (write "Bar")))
+     
+     (inline-block ()
+       (write "Blah minor")))
+   "Foo
+
+Bar
+
+Blah minor"))
+
+
+(deftest test-blocks-margins1
+  (compare-output
+   (text-block ()
+     (text-block ()
+       (write "Foo"))
+     (text-block ()
+       (write "Bar")))
+
+   "Foo
+Bar"))
+
+
+(deftest test-blocks-margins2
+  (compare-output
+   (text-block ()
+     (text-block ()
+       (write "Foo"))
+     (text-block (:margin 1)
+       (write "Bar")))
+
+   "Foo
+
+Bar"))
+
+
+(deftest test-blocks-margins3
+  (compare-output
+   (text-block ()
+     (text-block (:margin 1)
+       (write "Foo"))
+     (text-block (:margin 1)
+       (write "Bar")))
+
+   ;; Here we expect, that empty line
+   ;; before "Foo" will be omitted, because it is
+   ;; the first element
+   "Foo
+
+Bar"))
+
+
+(deftest test-blocks-margins4
+  (compare-output
+   (text-block (:per-line-prefix "> ")
+     (text-block (:margin 1)
+       (write "Foo"))
+     (text-block (:margin 1)
+       (write "Bar")))
+
+   ;; The same, empty lines before "Foo"
+   ;; are omitted, because it is the first element
+   "> Foo
+>
+> Bar"))
+
+
+(deftest test-blocks-margins5
+  (compare-output
+   (text-block (:per-line-prefix "> ")
+     (text-block (:margin 1)
+       (write "Foo"))
+     (text-block ()
+       (write "Bar")))
+
+   "> Foo
+>
+> Bar"))
+
+
+(deftest test-blocks-margins6
+  (compare-output
+   (text-block () 
+     (text-block (:margin 1)
+       (write "First line"))
+       
+     (text-block (:per-line-prefix "> ")
+       (text-block (:margin 1)
+         (write "Foo"))
+       (text-block ()
+         (write "Bar"))))
+
+   "First line
+
+> Foo
+>
+> Bar"))
