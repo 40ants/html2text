@@ -11,6 +11,7 @@ set -e
 if [ "$TRAVIS_BRANCH" = "fixing-travis" -a "$TRAVIS_PULL_REQUEST" = "false" -a "$LISP" = "ccl" -a "$TRAVIS_OS_NAME" = "linux" ]; then
     virtualenv env
     source env/bin/activate
+    python --version
     pip --version
     pip install pyopenssl
     pip install -r docs/requirements.txt
