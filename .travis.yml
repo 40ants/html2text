@@ -14,8 +14,9 @@ addons:
 env:
   global:
     - PATH=~/.roswell/bin:$PATH
-    # - ROSWELL_BRANCH=master
     - ROSWELL_INSTALL_DIR=$HOME/.roswell
+    - ROSWELL_REPO=https://github.com/svetlyak40wt/roswell
+    - ROSWELL_BRANCH=fix-error-output
   matrix:
     - LISP=sbcl
     # - LISP=ecl
