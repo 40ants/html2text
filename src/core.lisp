@@ -326,6 +326,29 @@
   (values t))
 
 
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun %make-heading-prefix (level)
+    (format nil "~A "
+            (coerce (loop repeat level
+                          collect #\#)
+                    'string))))
+
+(defmacro def-headings-serializers (&optional (num-levels 6))
+  `(progn
+     ,@(loop for level from 1 upto num-levels
+             for tag = (make-keyword (format nil "H~A" level))
+             for prefix = (%make-heading-prefix level)
+             ;; Here we generate this block for each level of HTML headers
+             collect `(def-tag-serializer (,tag)
+                        (text-block (:margin 1)
+                          (log:info "Dsdadada")
+                          (write ,prefix)
+                          (call-next-method))
+                        (values t)))))
+
+(def-headings-serializers)
+
+
 (def-tag-serializer (:img)
   (let ((url (or (plump:attribute node "src")
                  "")))

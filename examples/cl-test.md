@@ -44,4 +44,18 @@ in the sentence. How about
 
 ```
 
-    Is everything is ok?  
+
+
+# Now we'll test a headings. This is a first level.
+
+## Second level.
+
+### Third level.
+
+#### Fourth level.
+
+##### Fifth level.
+
+###### Sixth level.
+
+Is everything is ok?  

@@ -390,3 +390,21 @@ Bar"))
 > Foo
 >
 > Bar"))
+
+
+(deftest test-html-headings
+  (ok (equal (html2text "<h1>First level</h1>
+<h2>Second level</h2><h3>Third level</h3>
+<h4>Fourth level</h4><h5>Fifth level</h5>
+<h6>Sixth level</h6>")
+             "# First level
+
+## Second level
+
+### Third level
+
+#### Fourth level
+
+##### Fifth level
+
+###### Sixth level")))
