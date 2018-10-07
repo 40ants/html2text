@@ -12,7 +12,7 @@ if [ "$TRAVIS_BRANCH" = "fixing-travis" -a "$TRAVIS_PULL_REQUEST" = "false" -a "
     virtualenv env
     source env/bin/activate
     pip --version
-    pip install pyopenssl
+#    pip install pyopenssl
     pip install -r docs/requirements.txt
     ./build-docs.ros
 else
