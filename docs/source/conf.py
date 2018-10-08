@@ -43,10 +43,10 @@ extensions = [
 from os.path import join, dirname, realpath, expandvars
 cl_systems = [
     {
-        'name': 'html2text-test',
+        'name': 'html2text',
         'path': join(dirname(realpath(__file__)), '../../'),
         'packages': [
-            'html2text',
+#            'html2text',
         ]
     },
 ]
