@@ -11,24 +11,26 @@ addons:
     packages:
       - libc6-i386
       - openjdk-7-jre
+      - python-virtualenv
 env:
   global:
     - PATH=~/.roswell/bin:$PATH
-    - ROSWELL_BRANCH=master
     - ROSWELL_INSTALL_DIR=$HOME/.roswell
   matrix:
-    - LISP=sbcl
+    - LISP=sbcl-bin
     - LISP=ecl
-    - LISP=abcl
     - LISP=allegro
     - LISP=ccl
     - LISP=clisp
-    - LISP=cmucl
+    # does not work because cl-info fails under ABCL
+    # - LISP=abcl
+    # under cmucl cl-info does not work either, but for different reason
+    # - LISP=cmucl
 
 matrix:
   allow_failures:
+    # 10 of 26 tests failed
     - env: LISP=clisp
-    - env: LISP=ecl
 
 os:
   - osx
@@ -36,18 +38,17 @@ os:
 
 install:
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
-  - ros install prove
+  - ros install asdf
+  - ros install rove
+  - ros install 40ants/cl-info
+  - ros install 40ants/cl-hamcrest
 
 before_script:
+  - env
   - ros --version
   - ros config
-  - ros -e '(princ (lisp-implementation-type))
-            (terpri)
-            (princ (lisp-implementation-version))
-            (terpri)
-            (princ *features*)
-            (terpri)
-            (uiop:quit 0)'
+  - cl-info
 
 script:
-  - run-prove html2text-test.asd
+  - rove html2text-test.asd
+  - curl -L https://raw.githubusercontent.com/40ants/update-gh-pages/master/build-docs.sh | sh
