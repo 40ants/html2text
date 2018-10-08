@@ -16,7 +16,6 @@ env:
   global:
     - PATH=~/.roswell/bin:$PATH
     - ROSWELL_INSTALL_DIR=$HOME/.roswell
-    - BUILD_DOCS_FROM_BRANCH=fixing-travis
   matrix:
     - LISP=sbcl-bin
     - LISP=ecl
