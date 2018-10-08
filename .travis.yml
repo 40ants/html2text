@@ -16,6 +16,7 @@ env:
   global:
     - PATH=~/.roswell/bin:$PATH
     - ROSWELL_INSTALL_DIR=$HOME/.roswell
+    - BUILD_DOCS_FROM_BRANCH=fixing-travis
   matrix:
     - LISP=sbcl-bin
     - LISP=ecl
@@ -51,4 +52,4 @@ before_script:
 
 script:
   - rove html2text-test.asd
-  - ./build-docs-on-ci.sh
+  - curl -L https://raw.githubusercontent.com/40ants/update-gh-pages/master/build-docs.sh | sh
