@@ -6,8 +6,6 @@
                 #:last-elt
                 #:ensure-list
                 #:make-keyword)
-  (:import-from #:html2text/utils
-                #:write-pretty-string)
   (:import-from #:plump)
   (:import-from #:log4cl)
   (:export #:foo
@@ -16,11 +14,26 @@
            #:serialize
            #:text-block
            #:write
-           #:inline-block))
+           #:inline-block
+           #:*href-processor*
+           #:get-node-tag
+           #:def-tag-serializer
+           #:node))
 (in-package html2text/core)
 
 
 (defvar *output-stream* t)
+
+(defvar *href-processor* #'identity
+  "A function of one argument which accepts a URL from <a href=\"...\">
+   and should return a URL.
+
+   Useful for some sort of convertion, like revealing redirects, etc.
+   But for revealing redirects use:
+
+   (ql:quickload :html2text-link-revealer)
+   (link-revealer:with-turned-on ()
+      (html2text \"My HTML\"))")
 
 
 (defparameter *tags-to-remove* '(:style :script))
@@ -51,6 +64,7 @@
     (values))
   (:documentation "Receives a tag (which can be a nil or a keyword) and a plump document node.
                    Writes to a standard output stream a text representation of the node if any."))
+
 
 (defmethod get-node-tag ((node plump:element))
   (make-keyword (string-upcase (plump:tag-name node))))
@@ -193,7 +207,7 @@
                (unless prev-node-was-block
                  (log:debug "Writing whitespace")
                  (write-char #\Space *output-stream*))
-               ;; Serialize should return non nil if tag didn't produce any output
+               ;; Serialize should return non nil if tag produced any output
                (when (serialize child-node-tag
                                 child-node)
                  (setf output-was-produced t)
@@ -308,11 +322,12 @@
 
 
 (def-tag-serializer (:a)
-  (let ((url (or (plump:attribute node "href")
-                 "")))
+  (let* ((url (or (plump:attribute node "href")
+                  ""))
+         (processed-url (funcall *href-processor* url)))
     (write "[")
     (call-next-method)
-    (write "](" url ")")))
+    (write "](" processed-url ")")))
 
 
 (def-tag-serializer (:blockquote)
@@ -341,7 +356,6 @@
              ;; Here we generate this block for each level of HTML headers
              collect `(def-tag-serializer (,tag)
                         (text-block (:margin 1)
-                          (log:info "Dsdadada")
                           (write ,prefix)
                           (call-next-method))
                         (values t)))))
@@ -389,9 +403,10 @@
   (call-next-method))
 
 
-(defun html2text (text)
-  (check-type text string)
-  (let* ((document (plump:parse text))
+(defun html2text (html)
+  "Converts given HTML string into the Markdown and returns a string as well."
+  (check-type html string)
+  (let* ((document (plump:parse html))
          (*print-pretty* t)
          (*written-newlines* 0)
          (*block-index* 0))
