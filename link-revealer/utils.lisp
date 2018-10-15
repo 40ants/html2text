@@ -1,10 +1,12 @@
 (defpackage #:html2text-link-revealer/utils
-  (:nicknames #:link-revealer)
+  (:nicknames #:link-revealer #:html2text-link-revealer)
   (:use #:cl)
   (:import-from #:dexador)
   (:import-from #:log4cl)
   (:import-from #:function-cache
                 #:defcached)
+  (:import-from #:cl-strings
+                #:starts-with)
   (:export
    #:get-final-url
    #:with-turned-on))
@@ -25,9 +27,13 @@
 
 (defcached get-final-url (url &key (max-redirects *max-redirects*))
   "Goes through all redirects and returns a real URL."
-  (let ((uri (nth-value 3 (head-or-get url
-                                       :max-redirects max-redirects))))
-    (quri:render-uri uri)))
+  (cond
+    ((or (starts-with url "http://")
+         (starts-with url "https://"))
+     (let ((uri (nth-value 3 (head-or-get url
+                                          :max-redirects max-redirects))))
+       (quri:render-uri uri)))
+    (t url)))
 
 
 (defmacro with-turned-on ((&key (max-redirects nil max-redirects-p))
