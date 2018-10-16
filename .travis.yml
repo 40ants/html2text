@@ -10,6 +10,8 @@ addons:
   apt:
     packages:
       - libc6-i386
+      # we need this to build static-vectors successfully on allegro under the linux
+      - libffi-dev:i386
       - openjdk-7-jre
       - python-virtualenv
 env:
@@ -38,7 +40,7 @@ os:
 
 install:
   # we need this to build static-vectors successfully on allegro under the linux
-  - if [ "$LISP" = "allegro" -a "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install libc6-dev-i386 libffi-dev:i386; fi
+#  - if [ "$LISP" = "allegro" -a "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get install libc6-dev-i386 libffi-dev:i386; fi
   - curl -L https://raw.githubusercontent.com/snmsts/roswell/release/scripts/install-for-ci.sh | sh
   - ros install asdf
   - ros install rove
