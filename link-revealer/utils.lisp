@@ -40,8 +40,8 @@
                                                         :max-redirects max-redirects
                                                         :timeout timeout))))
                      (quri:render-uri uri))
-       ;; In case of these errors, we'll return URL as is
-       ((or usocket:timeout-error dexador.error:http-request-failed) ()
+       ;; In case of errors, we'll return URL as is
+       (error ()
          url)))
     (t url)))
 
