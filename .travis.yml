@@ -11,7 +11,7 @@ addons:
     packages:
       - libc6-i386
       # we need this to build static-vectors successfully on allegro under the linux
-      - libffi-dev:i386
+#      - libffi-dev:i386
       - openjdk-7-jre
       - python-virtualenv
 env:
