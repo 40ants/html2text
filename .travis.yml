@@ -19,13 +19,18 @@ env:
   matrix:
     - LISP=sbcl-bin
     - LISP=ecl
-    - LISP=allegro
     - LISP=ccl
     - LISP=clisp
     # does not work because cl-info fails under ABCL
     # - LISP=abcl
     # under cmucl cl-info does not work either, but for different reason
     # - LISP=cmucl
+    # Allegro does not work because of some strange errors like
+    # don't recognize component type :GROVEL-FILE)
+    # on OSX
+    # or fatal error: sys/cdefs.h: No such file or directory
+    # on Linux
+    # - LISP=allegro
 
 matrix:
   allow_failures:

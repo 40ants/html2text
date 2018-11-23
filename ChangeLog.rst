@@ -2,6 +2,11 @@
  ChangeLog
 ===========
 
+0.2.1
+=====
+
+* Link revealer now ignores HTTP errors and timeouts.
+
 0.2.0
 =====
 
