@@ -2,6 +2,11 @@
  ChangeLog
 ===========
 
+0.3.1 (2023-05-26)
+==================
+
+* Argument TAGS-TO-REMOVE was added to function HTML2TEXT by default it is equal to the ``(list :style :script)``.
+
 0.2.1
 =====
 

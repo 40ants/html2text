@@ -4,3 +4,4 @@
 /qlfile.lock
 /quicklisp/
 /roswell/html2text
+*.fasl

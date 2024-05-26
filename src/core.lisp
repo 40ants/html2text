@@ -1,4 +1,4 @@
-(defpackage #:html2text/core
+(uiop:define-package #:html2text/core
   (:nicknames #:html2text)
   (:use #:cl)
   (:shadow #:write)
@@ -8,9 +8,8 @@
                 #:make-keyword)
   (:import-from #:plump)
   (:import-from #:log4cl)
-  (:export #:foo
-           #:bar
-           #:html2text
+  (:import-from #:str)
+  (:export #:html2text
            #:serialize
            #:text-block
            #:write
@@ -190,7 +189,7 @@
   (let ((children (plump:children node))
         (output-was-produced nil)
         (node-tag (get-node-tag node)))
-    
+
     (loop with prev-node-was-block = t
           for idx below (length children)
           for child-node = (aref children idx)
@@ -403,14 +402,16 @@
   (call-next-method))
 
 
-(defun html2text (html)
+(defun html2text (html &key (tags-to-remove *tags-to-remove*))
   "Converts given HTML string into the Markdown and returns a string as well."
   (check-type html string)
   (let* ((document (plump:parse html))
+         (*tags-to-remove* tags-to-remove)
          (*print-pretty* t)
          (*written-newlines* 0)
          (*block-index* 0))
-    (with-output-to-string (*output-stream*)
-      
-      (pprint-logical-block (*output-stream* nil)
-        (serialize nil document)))))
+    
+    (str:trim
+     (with-output-to-string (*output-stream*)
+       (pprint-logical-block (*output-stream* nil)
+         (serialize nil document))))))
