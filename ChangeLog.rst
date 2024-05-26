@@ -6,6 +6,7 @@
 ==================
 
 * Argument TAGS-TO-REMOVE was added to function HTML2TEXT by default it is equal to the ``(list :style :script)``.
+* Also, now function HTML2TEXT trim all whitespace characters from the beginning and end of the result.
 
 0.2.1
 =====
